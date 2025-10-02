@@ -1,0 +1,30 @@
+{
+  "name": "node-ci-sample-src-tests",
+  "version": "1.0.0",
+  "description": "Exemplo Node.js com CI (GitHub Actions) usando pastas src/ e tests/.",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand"
+  },
+  "keywords": [
+    "ci",
+    "github-actions",
+    "node",
+    "express",
+    "jest"
+  ],
+  "author": "Matheus Cuel",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
+}
