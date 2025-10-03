@@ -1,0 +1,54 @@
+﻿name: Docker CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t node-ci-sample:ci .
+
+      - name: Run container & smoke test
+        run: |
+          docker run -d -p 3000:3000 --name app node-ci-sample:ci
+          # espera a aplicação responder /health
+          for i in {1..20}; do
+            if curl -fsS http://localhost:3000/health | grep '"ok":\s*true'; then
+              docker rm -f app
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "App não ficou saudável a tempo"
+          docker logs app || true
+          docker rm -f app || true
+          exit 1
+
+      # Opcional: publica no Docker Hub se secrets estiverem configurados
+      - name: Login to Docker Hub
+        if: ${{ secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN }}
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Push image (optional)
+        if: ${{ secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN }}
+        run: |
+          IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/node-ci-sample:${{ github.sha }}"
+          docker tag node-ci-sample:ci "$IMAGE"
+          docker push "$IMAGE"
